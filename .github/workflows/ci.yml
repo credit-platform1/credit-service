@@ -1,0 +1,15 @@
+name: Credit Service CI/CD
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  pipeline:
+    uses: credit-platform1/credit-platform-ci/.github/workflows/java-service.yml@main
+    with:
+      java-version: '21'
+      maven-args: ''
+    secrets: inherit
