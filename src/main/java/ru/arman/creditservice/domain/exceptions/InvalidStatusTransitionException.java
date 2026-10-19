@@ -2,8 +2,6 @@ package ru.arman.creditservice.domain.exceptions;
 
 import ru.arman.creditservice.domain.model.ApplicationStatus;
 
-import java.util.UUID;
-
 public class InvalidStatusTransitionException extends RuntimeException {
     public InvalidStatusTransitionException(
             ApplicationStatus fromStatus,

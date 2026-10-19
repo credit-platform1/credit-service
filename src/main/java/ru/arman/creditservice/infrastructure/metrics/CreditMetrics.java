@@ -6,7 +6,6 @@ import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Timer;
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -30,7 +29,6 @@ public class CreditMetrics {
 
     public CreditMetrics(MeterRegistry registry) {
         this.registry = registry;
-        var commonTags = List.of(Tag.of(APPLICATION_TAG, APPLICATION_NAME));
 
         this.applicationsCreated = Counter.builder("credit.applications.created")
                 .description("Total credit applications created")
