@@ -1,0 +1,233 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-01-create-credit-applications
+      author: credit-platform
+      changes:
+        - createTable:
+            tableName: credit_applications
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+
+              - column:
+                  name: customer_first_name
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: customer_last_name
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: customer_middle_name
+                  type: VARCHAR(100)
+
+              - column:
+                  name: customer_birth_date
+                  type: DATE
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: customer_inn
+                  type: VARCHAR(12)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: customer_phone
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: customer_email
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: requested_amount
+                  type: NUMERIC(12, 2)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: term_months
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: purpose
+                  type: VARCHAR(30)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: monthly_income
+                  type: NUMERIC(12, 2)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: monthly_expenses
+                  type: NUMERIC(12, 2)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: employment_type
+                  type: VARCHAR(30)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: status
+                  type: VARCHAR(30)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: version
+                  type: BIGINT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 001-02-add-credit-application-checks
+      author: Arman Nurgaliev
+      changes:
+        - sql:
+            sql: |
+              ALTER TABLE credit_applications
+                  ADD CONSTRAINT chk_credit_applications_requested_amount
+                  CHECK (requested_amount > 0);
+
+              ALTER TABLE credit_applications
+                  ADD CONSTRAINT chk_credit_applications_term_months
+                  CHECK (term_months BETWEEN 3 AND 120);
+      rollback:
+        - sql:
+            sql: |
+              ALTER TABLE credit_applications
+                  DROP CONSTRAINT IF EXISTS chk_credit_applications_term_months;
+
+              ALTER TABLE credit_applications
+                  DROP CONSTRAINT IF EXISTS chk_credit_applications_requested_amount;
+
+  - changeSet:
+      id: 001-03-create-credit-application-indexes
+      author: Arman Nurgaliev
+      changes:
+        - createIndex:
+            indexName: idx_credit_applications_status
+            tableName: credit_applications
+            columns:
+              - column:
+                  name: status
+
+        - createIndex:
+            indexName: idx_credit_applications_customer_inn
+            tableName: credit_applications
+            columns:
+              - column:
+                  name: customer_inn
+
+        - createIndex:
+            indexName: idx_credit_applications_created_at
+            tableName: credit_applications
+            columns:
+              - column:
+                  name: created_at
+
+  - changeSet:
+      id: 001-04-create-application-status-history
+      author: Arman Nurgaliev
+      changes:
+        - createTable:
+            tableName: application_status_history
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  defaultValueComputed: gen_random_uuid()
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+
+              - column:
+                  name: application_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: from_status
+                  type: VARCHAR(30)
+
+              - column:
+                  name: to_status
+                  type: VARCHAR(30)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: changed_by
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: reason
+                  type: VARCHAR(500)
+
+              - column:
+                  name: correlation_id
+                  type: VARCHAR(64)
+
+              - column:
+                  name: changed_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: application_status_history
+            baseColumnNames: application_id
+            referencedTableName: credit_applications
+            referencedColumnNames: id
+            constraintName: fk_status_history_application
+            onDelete: RESTRICT
+
+        - createIndex:
+            indexName: idx_status_history_application_changed
+            tableName: application_status_history
+            columns:
+              - column:
+                  name: application_id
+              - column:
+                  name: changed_at

@@ -1,0 +1,12 @@
+databaseChangeLog:
+  - include:
+      file: db/changelog/changeset/000-enable-pgcrypto.yaml
+
+  - include:
+      file: db/changelog/changeset/001-create-credit-application-tables.yaml
+
+  - include:
+      file: db/changelog/changeset/002-create-idempotency-keys.yaml
+
+  - include:
+      file: db/changelog/changeset/003-create-outbox-events.yaml
