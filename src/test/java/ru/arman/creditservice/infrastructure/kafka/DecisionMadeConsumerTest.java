@@ -10,7 +10,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import ru.arman.creditservice.domain.dto.ChangeApplicationStatusRequest;
 import ru.arman.creditservice.domain.event.DecisionMadeEvent;
-import ru.arman.creditservice.domain.exceptions.ApplicationNotFoundException;
 import ru.arman.creditservice.domain.model.ApplicationStatus;
 import ru.arman.creditservice.service.CreditApplicationService;
 
@@ -23,7 +22,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)

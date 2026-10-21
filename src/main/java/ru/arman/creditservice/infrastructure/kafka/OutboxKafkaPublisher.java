@@ -9,7 +9,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import ru.arman.creditservice.domain.entity.OutboxEventEntity;
-import ru.arman.creditservice.domain.event.ApplicationEventType;
 import ru.arman.creditservice.repository.OutboxEventRepository;
 
 import java.time.Instant;
