@@ -10,7 +10,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import ru.arman.creditservice.domain.entity.OutboxEventEntity;
 import ru.arman.creditservice.domain.event.ApplicationEventType;
-import ru.arman.creditservice.infrastructure.metrics.CreditMetrics;
 import ru.arman.creditservice.repository.OutboxEventRepository;
 
 import java.time.Instant;
@@ -24,14 +23,11 @@ public class OutboxKafkaPublisher {
     private final OutboxEventRepository outboxRepository;
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final KafkaTopics topics;
-    private final CreditMetrics metrics;
 
     @Value("${outbox.publisher.max-retries:5}")
     private int maxRetries;
 
-    @Scheduled(
-            fixedDelayString = "${outbox.publisher.fixed-delay-ms:1000}"
-    )
+    @Scheduled(fixedDelayString = "${outbox.publisher.fixed-delay-ms:1000}")
     @Transactional
     public void publishPendingEvents() {
         var events = outboxRepository.findTop100ByStatusOrderByCreatedAtAscNative();
@@ -48,7 +44,6 @@ public class OutboxKafkaPublisher {
             }
 
             try {
-                var sample = metrics.startOutboxPublishTimer();
                 SendResult<String, String> result = kafkaTemplate
                         .send(
                                 topic,
@@ -56,7 +51,6 @@ public class OutboxKafkaPublisher {
                                 event.getPayload()
                         )
                         .get(5, TimeUnit.SECONDS);
-                metrics.stopOutboxPublishTimer(sample);
 
                 log.info(
                         "Outbox event published: eventId={}, topic={}, partition={}, offset={}",
@@ -69,15 +63,12 @@ public class OutboxKafkaPublisher {
                 event.setStatus(OutboxEventEntity.OutboxStatus.PUBLISHED);
                 event.setPublishedAt(Instant.now());
                 event.setLastError(null);
-                metrics.incrementOutboxPublished(event.getEventType().name());
             } catch (Exception e) {
                 event.setRetryCount(event.getRetryCount() + 1);
                 event.setLastError(e.getMessage());
-                metrics.incrementOutboxRetry(event.getEventType().name());
 
                 if (event.getRetryCount() >= maxRetries) {
                     event.setStatus(OutboxEventEntity.OutboxStatus.FAILED);
-                    metrics.incrementOutboxFailed(event.getEventType().name());
                 }
 
                 log.error(

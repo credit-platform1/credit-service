@@ -1,5 +1,7 @@
 package ru.arman.creditservice.infrastructure.kafka;
 
+import io.micrometer.observation.Observation;
+import io.micrometer.observation.ObservationRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -7,7 +9,6 @@ import org.springframework.stereotype.Component;
 import ru.arman.creditservice.domain.dto.ChangeApplicationStatusRequest;
 import ru.arman.creditservice.domain.event.DecisionMadeEvent;
 import ru.arman.creditservice.domain.model.ApplicationStatus;
-import ru.arman.creditservice.infrastructure.metrics.CreditMetrics;
 import ru.arman.creditservice.service.CreditApplicationService;
 
 @Slf4j
@@ -16,19 +17,13 @@ import ru.arman.creditservice.service.CreditApplicationService;
 public class DecisionMadeConsumer {
 
     private final CreditApplicationService applicationService;
-    private final CreditMetrics metrics;
+    private final ObservationRegistry observationRegistry;
 
     @KafkaListener(
             topics = "${topics.decision-made}",
             groupId = "credit-service"
     )
     public void handle(DecisionMadeEvent event) {
-        log.info(
-                "Received decision for application {}: {}",
-                event.applicationId(),
-                event.decision()
-        );
-
         var targetStatus = switch (event.decision()) {
             case APPROVED -> ApplicationStatus.APPROVED;
             case DECLINED -> ApplicationStatus.DECLINED;
@@ -38,13 +33,31 @@ public class DecisionMadeConsumer {
             );
         };
 
-        applicationService.changeStatus(
-                event.applicationId(),
-                new ChangeApplicationStatusRequest(
-                        targetStatus,
-                        String.join(",", event.reasonCodes()),
-                        "SCORING_SERVICE"),
-                event.correlationId()
+        Observation observation = Observation.createNotStarted(
+                "integration.kafka.consumed",
+                observationRegistry
         );
+
+        observation.lowCardinalityKeyValue("topic", "credit.decision-made");
+        observation.lowCardinalityKeyValue("status", targetStatus.name());
+        observation.highCardinalityKeyValue("applicationId", event.applicationId().toString());
+
+        observation.observe(() -> {
+            log.info(
+                    "Received decision for application {}: {}",
+                    event.applicationId(),
+                    event.decision()
+            );
+
+            applicationService.changeStatus(
+                    event.applicationId(),
+                    new ChangeApplicationStatusRequest(
+                            targetStatus,
+                            String.join(",", event.reasonCodes()),
+                            "SCORING_SERVICE"
+                    ),
+                    event.correlationId()
+            );
+        });
     }
 }

@@ -1,5 +1,6 @@
 package ru.arman.creditservice.infrastructure.kafka;
 
+import io.micrometer.observation.ObservationRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -11,7 +12,6 @@ import ru.arman.creditservice.domain.dto.ChangeApplicationStatusRequest;
 import ru.arman.creditservice.domain.event.DecisionMadeEvent;
 import ru.arman.creditservice.domain.exceptions.ApplicationNotFoundException;
 import ru.arman.creditservice.domain.model.ApplicationStatus;
-import ru.arman.creditservice.infrastructure.metrics.CreditMetrics;
 import ru.arman.creditservice.service.CreditApplicationService;
 
 import java.math.BigDecimal;
@@ -32,13 +32,11 @@ class DecisionMadeConsumerTest {
     @Mock
     private CreditApplicationService applicationService;
 
-    private CreditMetrics metrics;
     private DecisionMadeConsumer consumer;
 
     @BeforeEach
     void setUp() {
-        metrics = new CreditMetrics(new io.micrometer.core.instrument.simple.SimpleMeterRegistry());
-        consumer = new DecisionMadeConsumer(applicationService, metrics);
+        consumer = new DecisionMadeConsumer(applicationService, ObservationRegistry.create());
     }
 
     @Test

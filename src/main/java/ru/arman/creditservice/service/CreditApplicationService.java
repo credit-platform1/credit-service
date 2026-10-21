@@ -19,7 +19,6 @@ import ru.arman.creditservice.domain.exceptions.IdempotencyConflictException;
 import ru.arman.creditservice.domain.exceptions.InvalidStatusTransitionException;
 import ru.arman.creditservice.domain.model.ApplicationStatus;
 import ru.arman.creditservice.infrastructure.json.JsonUtils;
-import ru.arman.creditservice.infrastructure.metrics.CreditMetrics;
 import ru.arman.creditservice.repository.ApplicationStatusHistoryRepository;
 import ru.arman.creditservice.repository.CreditApplicationRepository;
 import ru.arman.creditservice.repository.IdempotencyKeyRepository;
@@ -40,7 +39,6 @@ public class CreditApplicationService {
     private final IdempotencyKeyRepository idempotencyRepository;
     private final OutboxEventRepository outboxRepository;
     private final ApplicationStatusHistoryRepository historyRepository;
-    private final CreditMetrics metrics;
     private final RequestContext requestContext;
 
     @Transactional
@@ -139,8 +137,6 @@ public class CreditApplicationService {
             throw new IdempotencyConflictException(idempotencyKey);
         }
 
-        metrics.incrementApplicationsCreated();
-
         return toCreateResponse(application);
     }
 
@@ -212,8 +208,6 @@ public class CreditApplicationService {
                         .retryCount(0)
                         .build()
         );
-
-        metrics.incrementApplicationsCancelled();
 
         return toResponse(application);
     }
@@ -290,8 +284,6 @@ public class CreditApplicationService {
                         .retryCount(0)
                         .build()
         );
-
-        metrics.incrementStatusChanged(currentStatus.name(), targetStatus.name());
 
         return toResponse(application);
     }
